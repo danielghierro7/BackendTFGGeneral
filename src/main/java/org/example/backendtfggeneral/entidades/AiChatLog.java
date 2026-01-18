@@ -1,5 +1,9 @@
 package org.example.backendtfggeneral.entidades;
 
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "ai_chat_log")
 public class AiChatLog {

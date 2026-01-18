@@ -9,9 +9,10 @@ import java.util.List;
 public class CiudadService {
 
     private final CiudadRepository ciudadRepository;
-
+//genera una clase en tiempo de ejecucion
     public CiudadService(CiudadRepository ciudadRepository) {
-        this.ciudadRepository = ciudadRepository;
+        this.ciudadRepository = ciudadRepository; //esto crea una cosa llamada proxy interno que hace spring
+        //Lo mismo que por ejemplo List... = new Arraylist () pero lo hace por detras
     }
 
     public List<Ciudad> obtenerTodas() {

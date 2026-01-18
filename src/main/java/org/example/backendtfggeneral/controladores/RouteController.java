@@ -11,11 +11,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/ruta")
-public class RutaController {
+public class RouteController {
 
-    private final RutaService rutaService;
+    private final RoutaService rutaService;
 
-    public RutaController(RutaService rutaService) {
+    public RouteController(RoutaService rutaService) {
         this.rutaService = rutaService;
     }
 
