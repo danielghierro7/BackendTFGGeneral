@@ -1,6 +1,7 @@
 package org.example.backendtfggeneral.controladores;
 
 import org.example.backendtfggeneral.beans.Ubicacion;
+import org.example.backendtfggeneral.services.RouteService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,9 +14,9 @@ import java.util.List;
 @RequestMapping("/ruta")
 public class RouteController {
 
-    private final RoutaService rutaService;
+    private final RouteService rutaService;
 
-    public RouteController(RoutaService rutaService) {
+    public RouteController(RouteService rutaService) {
         this.rutaService = rutaService;
     }
 

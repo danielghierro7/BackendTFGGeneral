@@ -5,6 +5,7 @@ package org.example.backendtfggeneral.procesos;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.example.backendtfggeneral.beans.Ubicacion;
 import org.example.backendtfggeneral.entidades.Parada;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,13 +20,21 @@ import java.util.List;
 public class CalcularTiempoRestanteAParada {
 
     private final WebClient webClient;
-    private final String apiKey = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImU5YmY5ZGU0OWMyOTRiOGE4NDY1OGQxZDI0NDY3YzVjIiwiaCI6Im11cm11cjY0In0=";
+
+    @Value("${ors.api.key}") String apiKey;
+
 
     public CalcularTiempoRestanteAParada(WebClient.Builder builder) {
+
+        //WebClient.Builder es el configurador donde defino como va a se el objeto WebClient que construiré con el .build
+        //Builder Pattern es un patrón de diseño de creación Su objetivo es solucionar el problema de tener constructores con demasiados parámetros (el "constructor pesadilla")
+        //Fluent interface es para escribirlo todo de corrido como seria leido en la vida real en vez de estar separando cada metodo por ;
+
+
         this.webClient = builder.baseUrl("https://api.openrouteservice.org/v2/directions/driving-car").build();
     }
 
-    public Mono<Double> calcularTiempoRestanteEntrePuntos(Ubicacion punto1, Ubicacion punto2) {
+    public Mono<Integer> calcularTiempoRestanteEntrePuntos(Ubicacion punto1, Ubicacion punto2) {
 
             String body = String.format("""
                 {
@@ -52,10 +61,10 @@ public class CalcularTiempoRestanteAParada {
                         try {
                             JsonNode root = mapper.readTree(json);
 
-                        double segundos = root.path("features").get(0)
+                        int segundos = root.path("features").get(0)
                     .path("properties")
                     .path("segments").get(0)
-                    .path("duration").asDouble();
+                    .path("duration").asInt();
 
             return segundos / 60.0;
 
@@ -71,7 +80,8 @@ public class CalcularTiempoRestanteAParada {
 
 
 
-    public Flux<Double> calcularTiempoRestanteAVariasParadas(Ubicacion ubicacionBus, List<Parada> listaParadas) {
+    public Flux<Integer> calcularTiempoRestanteAVariasParadas(Ubicacion ubicacionBus, List<Parada> listaParadas) {
         return Flux.fromIterable(listaParadas) // crea un flujo de paradas
                 .flatMap(parada -> calcularTiempoRestanteEntrePuntos(ubicacionBus, parada.getUbicacion()));
-}}
+}
+}
