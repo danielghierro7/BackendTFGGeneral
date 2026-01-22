@@ -9,6 +9,13 @@ public class Parada {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    //sus atributos no tienen tabla propia, mejor meterlo directamente como columnas de esta tabla de la entidad
+    @Embedded
+    private Ubicacion ubicacion;
+
+    @ManyToOne
+    @JoinColumn(name = "id_ciudad")
+    private Ciudad ciudad;
 
     private String nombre;
 
@@ -44,12 +51,5 @@ public class Parada {
         this.ciudad = ciudad;
     }
 
-    //sus atributos no tienen tabla propia, mételos directamente como columnas de esta tabla de la entidad
-    @Embedded
-    private Ubicacion ubicacion;
-
-    @ManyToOne
-    @JoinColumn(name = "id_ciudad")
-    private Ciudad ciudad;
-}
+    }
 

@@ -11,7 +11,7 @@ services:
       MYSQL_USER: bus_user
       MYSQL_PASSWORD: bus_pass
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./initdb/init.sql:/docker-entrypoint-initdb.d/init.sql

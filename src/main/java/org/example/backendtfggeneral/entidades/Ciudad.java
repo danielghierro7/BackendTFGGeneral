@@ -13,7 +13,8 @@ public class Ciudad {
     private Long id;
 
     private String nombre;
-
+    private String provincia;
+    private String pais;
     public Long getId() {
         return id;
     }
@@ -46,8 +47,7 @@ public class Ciudad {
         this.pais = pais;
     }
 
-    private String provincia;
-    private String pais;
 
-    // relaciones (opcional pero recomendado)
+
+
 }
