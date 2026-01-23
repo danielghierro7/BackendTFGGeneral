@@ -60,5 +60,5 @@ public class Parada {
         this.ciudad = ciudad;
     }
 
-    }
+}
 
