@@ -14,6 +14,8 @@ CREATE TABLE linea_bus (
                            FOREIGN KEY (ciudad_destino) REFERENCES ciudad(id)
 );
 
+
+
 CREATE TABLE parada (
                         id BIGINT AUTO_INCREMENT PRIMARY KEY,
                         nombre VARCHAR(255) NOT NULL,
@@ -22,6 +24,17 @@ CREATE TABLE parada (
                         id_ciudad BIGINT NOT NULL,
                         FOREIGN KEY (id_ciudad) REFERENCES ciudad(id)
 );
+
+
+CREATE TABLE linea_parada (
+                              id_linea BIGINT,
+                              id_parada BIGINT,
+                              orden INT, -- Para saber cuál es la 1ª, 2ª, 3ª...
+                              PRIMARY KEY (id_linea, id_parada),
+                              FOREIGN KEY (id_linea) REFERENCES linea_bus(id),
+                              FOREIGN KEY (id_parada) REFERENCES parada(id)
+);
+
 
 CREATE TABLE route (
                        id BIGINT AUTO_INCREMENT PRIMARY KEY,

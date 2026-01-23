@@ -1,6 +1,9 @@
 package org.example.backendtfggeneral.entidades;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.example.backendtfggeneral.beans.Ubicacion;
+import org.example.backendtfggeneral.entidades.LineaBus;
+import java.util.List;
 
 @Entity
 @Table(name = "parada")
@@ -16,6 +19,12 @@ public class Parada {
     @ManyToOne
     @JoinColumn(name = "id_ciudad")
     private Ciudad ciudad;
+
+
+    @ManyToMany(mappedBy = "paradas") // "paradas" es el nombre del campo en org.example.backendtfggeneral.entidades.LineaBus
+    @JsonIgnore // Evita que al mostrar una parada se intenten cargar sus líneas y viceversa
+    private List<LineaBus> lineas;
+
 
     private String nombre;
 

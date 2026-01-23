@@ -1,5 +1,8 @@
 package org.example.backendtfggeneral.beans;
 
+import jakarta.persistence.Embeddable;
+
+@Embeddable
 public class Ubicacion {
 
     private double latitud;
