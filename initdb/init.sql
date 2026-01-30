@@ -30,6 +30,8 @@ CREATE TABLE linea_parada (
                               id_linea BIGINT,
                               id_parada BIGINT,
                               orden INT, -- Para saber cuál es la 1ª, 2ª, 3ª...
+                              tiempo_siguiente_min INT,
+                              distancia_siguiente_km DOUBLE,
                               PRIMARY KEY (id_linea, id_parada),
                               FOREIGN KEY (id_linea) REFERENCES linea_bus(id),
                               FOREIGN KEY (id_parada) REFERENCES parada(id)
@@ -100,4 +102,27 @@ INSERT INTO ai_chat_log (pregunta, respuesta) VALUES
                                                   ('¿Qué autobuses salen desde Marchena?', 'Desde Marchena salen las líneas M-140, M-141 y M-142'),
                                                   ('¿Hay autobús a Osuna?', 'Sí, la línea M-142 conecta Marchena con Osuna'),
                                                   ('¿Cuántas paradas tiene Arahal?', 'Arahal cuenta con varias paradas urbanas y una estación principal');
-✅ Esto encaja PERFECTO con JPA
+
+-- LINEA M-140: Marchena -> La Puebla de Cazalla
+INSERT INTO linea_parada (id_linea, id_parada, orden, tiempo_siguiente_min, distancia_siguiente_km) VALUES
+                                                                                                        (140, 1, 1, 3, 1.2),  -- De Estación a Maestro Santos
+                                                                                                        (140, 2, 2, 2, 0.8),  -- De Maestro Santos a Plaza Ducal
+                                                                                                        (140, 3, 3, 18, 14.5), -- De Plaza Ducal (Marchena) a Estación Puebla
+                                                                                                        (140, 4, 4, 4, 1.5),  -- De Estación Puebla a Av. Antonio Fuentes
+                                                                                                        (140, 5, 5, 2, 0.7),  -- De Antonio Fuentes a Plaza Vieja
+                                                                                                        (140, 6, 6, 0, 0.0);   -- Fin de línea
+
+-- LINEA M-141: Marchena -> Arahal
+INSERT INTO linea_parada (id_linea, id_parada, orden, tiempo_siguiente_min, distancia_siguiente_km) VALUES
+                                                                                                        (141, 1, 1, 3, 1.2),  -- Salida Estación Marchena
+                                                                                                        (141, 3, 2, 15, 12.0), -- De Plaza Ducal a Estación Arahal
+                                                                                                        (141, 7, 3, 4, 1.1),  -- De Estación Arahal a Av. Verdeo
+                                                                                                        (141, 8, 4, 2, 0.6),  -- De Av. Verdeo a Parque San Antonio
+                                                                                                        (141, 9, 5, 0, 0.0);   -- Fin de línea
+
+-- LINEA M-142: Marchena -> Osuna
+INSERT INTO linea_parada (id_linea, id_parada, orden, tiempo_siguiente_min, distancia_siguiente_km) VALUES
+                                                                                                        (142, 1, 1, 25, 24.0), -- De Estación Marchena a Estación Osuna (Directo)
+                                                                                                        (142, 10, 2, 6, 2.2),  -- De Estación Osuna a Hospital
+                                                                                                        (142, 11, 3, 3, 1.1),  -- De Hospital a Universidad
+                                                                                                        (142, 12, 4, 0, 0.0);   -- Fin de línea

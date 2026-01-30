@@ -2,6 +2,8 @@ package org.example.backendtfggeneral.services;
 
 import org.example.backendtfggeneral.beans.Ubicacion;
 import org.example.backendtfggeneral.entidades.Ciudad;
+import org.example.backendtfggeneral.entidades.LineaBus;
+import org.example.backendtfggeneral.entidades.LineaParada;
 import org.example.backendtfggeneral.entidades.Parada;
 import org.example.backendtfggeneral.procesos.CalcularTiempoRestanteAParada;
 import org.example.backendtfggeneral.repositorios.CiudadRepository;
@@ -22,7 +24,7 @@ public class TiempoAParada {
 
     }
 
-    public Mono<List<Integer>> calcularTiempoRestanteAParadas(Ubicacion ubicacionBus, List<Parada> listaParadas) {
+    public Mono<List<Integer>> calcularTiempoRestanteAParadas(Ubicacion ubicacionBus, List<LineaParada> listaParadas) {
         return calcularTiempoRestanteAParada.calcularTiempoRestanteAVariasParadas(ubicacionBus,listaParadas);
     }
 }

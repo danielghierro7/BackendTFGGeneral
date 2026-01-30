@@ -9,7 +9,7 @@ LABEL authors="alumno2DAM"
 WORKDIR /app
 
 # Copiar el archivo .jar generado por Maven/Gradle
-COPY target/myapp.jar app.jar
+COPY target/BackendTFGGeneral-0.0.1-SNAPSHOT.jar app.jar
 
 # Exponer el puerto de la app
 EXPOSE 8080

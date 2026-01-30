@@ -2,6 +2,11 @@ version: '3.8'
 
 services:
   mysql:
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     image: mysql:8.0
     container_name: mysql_bus
     restart: always
@@ -11,10 +16,22 @@ services:
       MYSQL_USER: bus_user
       MYSQL_PASSWORD: bus_pass
     ports:
-      - "3307:3306"
+      - "3306:3307"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./initdb/init.sql:/docker-entrypoint-initdb.d/init.sql
+  backend:
+    build: .
+    container_name: spring_backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bus_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
 
 volumes:
   mysql_data:

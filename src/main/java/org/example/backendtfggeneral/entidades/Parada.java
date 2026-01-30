@@ -21,12 +21,13 @@ public class Parada {
     private Ciudad ciudad;
 
 
-    @ManyToMany(mappedBy = "paradas") // "paradas" es el nombre del campo en org.example.backendtfggeneral.entidades.LineaBus
-    @JsonIgnore // Evita que al mostrar una parada se intenten cargar sus líneas y viceversa
-    private List<LineaBus> lineas;
+    @OneToMany(mappedBy = "parada")
+    @JsonIgnore
+    private List<LineaParada> lineasRelacion;
 
 
     private String nombre;
+
 
     public Ubicacion getUbicacion() {
         return ubicacion;

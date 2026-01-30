@@ -1,13 +1,13 @@
 package org.example.backendtfggeneral.controladores;
 
 import org.example.backendtfggeneral.beans.Ubicacion;
+import org.example.backendtfggeneral.entidades.LineaParada;
+import org.example.backendtfggeneral.entidades.LineaParadaId;
 import org.example.backendtfggeneral.entidades.Parada;
 import org.example.backendtfggeneral.repositorios.LineaBusRepository;
+import org.example.backendtfggeneral.repositorios.LineaParadaRepository;
 import org.example.backendtfggeneral.repositorios.ParadaRepository;
-import org.example.backendtfggeneral.services.LineaBusService;
-import org.example.backendtfggeneral.services.ParadaService;
-import org.example.backendtfggeneral.services.RouteService;
-import org.example.backendtfggeneral.services.TiempoAParada;
+import org.example.backendtfggeneral.services.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -23,12 +23,14 @@ public class RouteController {
     private final ParadaService paradaService;
     private final LineaBusService lineaBusService;
     private final TiempoAParada tiempoAParada;
+    private final LineaParadaService lineaParadaService;
 
-    public RouteController(RouteService rutaService,ParadaService paradaService,LineaBusService lineaBusService,TiempoAParada tiempoAParada) {
+    public RouteController(RouteService rutaService, ParadaService paradaService, LineaBusService lineaBusService, TiempoAParada tiempoAParada, LineaBusService lineaParadaId, LineaParadaService lineaParadaService) {
         this.routaService = rutaService;
         this.paradaService = paradaService;
         this.lineaBusService = lineaBusService;
         this.tiempoAParada = tiempoAParada;
+        this.lineaParadaService= lineaParadaService;
     }
 
     @GetMapping("/tiempos")
@@ -39,7 +41,7 @@ public class RouteController {
 
 
         Ubicacion ubicacionBus = new Ubicacion(lat1, lon1);
-        List<Parada> paradas=lineaBusService.devolverParadasDeLineaBus(idLineaBus);
+        List<LineaParada> paradas=lineaParadaService.obtenerRutaPorIdLinea(140L);
         return tiempoAParada.calcularTiempoRestanteAParadas(ubicacionBus,paradas);
 
 
