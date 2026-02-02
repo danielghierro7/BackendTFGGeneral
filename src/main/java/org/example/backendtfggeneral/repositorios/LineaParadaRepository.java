@@ -16,4 +16,5 @@ public interface LineaParadaRepository extends JpaRepository<LineaParada, Long> 
     // Spring parsea este nombre: busca en el ID el campo idLinea y ordena por 'orden'
     List<LineaParada> findById_IdLineaOrderByOrdenAsc(Long idLinea);
 
+    List<LineaParada> findById_IdParada(Long idParada);
 }

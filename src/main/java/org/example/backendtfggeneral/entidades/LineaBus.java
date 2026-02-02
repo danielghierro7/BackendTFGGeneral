@@ -17,6 +17,38 @@ public class LineaBus {
     @JoinColumn(name = "ciudad_origen")
     private Ciudad ciudadOrigen;
 
+    public Ciudad getCiudadDestino() {
+        return ciudadDestino;
+    }
+
+    public void setCiudadDestino(Ciudad ciudadDestino) {
+        this.ciudadDestino = ciudadDestino;
+    }
+
+    public Ciudad getCiudadOrigen() {
+        return ciudadOrigen;
+    }
+
+    public void setCiudadOrigen(Ciudad ciudadOrigen) {
+        this.ciudadOrigen = ciudadOrigen;
+    }
+
+    public String getNombreLinea() {
+        return nombreLinea;
+    }
+
+    public void setNombreLinea(String nombreLinea) {
+        this.nombreLinea = nombreLinea;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     @ManyToOne
     @JoinColumn(name = "ciudad_destino")
     private Ciudad ciudadDestino;

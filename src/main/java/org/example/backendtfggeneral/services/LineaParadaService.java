@@ -20,5 +20,8 @@ public class LineaParadaService {
     }
 
 
-
+    public List<LineaParada> obtenerLineasPorParada(Long idParada) {
+        // Esto nos devuelve todas las líneas que tienen esta parada en su ruta
+        return lineaParadaRepository.findById_IdParada(idParada);
+    }
 }
