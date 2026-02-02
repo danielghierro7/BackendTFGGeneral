@@ -3,11 +3,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.example.backendtfggeneral.beans.Ubicacion;
 import org.example.backendtfggeneral.entidades.LineaBus;
+
+import java.io.Serializable;
 import java.util.List;
 
 @Entity
 @Table(name = "parada")
-public class Parada {
+public class Parada implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

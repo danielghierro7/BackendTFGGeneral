@@ -22,7 +22,7 @@ public class RouteController {
 
     private final CalcularTiempoRestanteAParada motorCalculo;
     private final LineaParadaService lineaParadaService;
-
+    private final java.util.Map<Long, Flux<List<BusLlegadaDTO>>> flujosPorParada = new java.util.concurrent.ConcurrentHashMap<>();
     public RouteController(CalcularTiempoRestanteAParada motorCalculo, LineaParadaService lineaParadaService) {
         this.motorCalculo = motorCalculo;
         this.lineaParadaService = lineaParadaService;
@@ -59,40 +59,38 @@ public class RouteController {
                 })
                 .share() // Compartir el flujo entre todos los usuarios
                 .log(); //mas que nada para meterle un log
-    }
-    @GetMapping(value = "/parada-tiempos", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    }@GetMapping(value = "/parada-tiempos", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<List<BusLlegadaDTO>> obtenerBusesPorParada(@RequestParam Long idParada) {
 
-        return Flux.interval(Duration.ZERO, Duration.ofMinutes(3))
-                .flatMap(tick -> {
-                    // 1. Buscamos qué líneas pasan por esta parada (Usando tu repositorio corregido)
-                    List<LineaParada> lineasQuePasan = lineaParadaService.obtenerLineasPorParada(idParada);
+        // 2. Si ya existe un flujo para esta parada, devuélvelo. Si no, créalo.
+        return flujosPorParada.computeIfAbsent(idParada, id ->
+                Flux.interval(Duration.ZERO, Duration.ofMinutes(3))
+                        .flatMap(tick -> {
+                            System.out.println("🛰️ LLAMADA REAL A ORS PARA PARADA: " + id);
+                            List<LineaParada> lineasQuePasan = lineaParadaService.obtenerLineasPorParada(id);
 
-                    // 2. Convertimos la lista de líneas en un flujo para calcular tiempos
-                    return Flux.fromIterable(lineasQuePasan)
-                            .flatMap(lp -> {
-                                // SIMULACIÓN: Como no tenemos busService, creamos una ubicación falsa
-                                // Puedes poner una lat/lon fija o que cambie un poco con el 'tick'
-                                org.example.backendtfggeneral.beans.Ubicacion busUbicFalsa =
-                                        new org.example.backendtfggeneral.beans.Ubicacion(37.38, -5.98);
+                            return Flux.fromIterable(lineasQuePasan)
+                                    .flatMap(lp -> {
+                                        Ubicacion busUbicFalsa = new Ubicacion(37.38, -5.98);
+                                        return motorCalculo.calcularTiempoRestanteEntrePuntos(busUbicFalsa, lp.getParada().getUbicacion())
+                                                .onErrorResume(e -> reactor.core.publisher.Mono.just(-1))
+                                                .map(tiempo -> new BusLlegadaDTO(
+                                                        lp.getLinea().getNombreLinea(),
+                                                        tiempo,
+                                                        "Destino Simulado"
+                                                ));
+                                    })
+                                    .collectList()
+                                    .map(lista -> {
+                                        lista.sort(Comparator.comparingInt(BusLlegadaDTO::getMinutosRestantes));
+                                        return lista;
+                                    });
+                        })
+                        .replay(1) // Guarda el último resultado en memoria
+                        .refCount() // Mantiene el flujo vivo mientras haya alguien mirando
+                        .doOnCancel(() -> System.out.println("❌ Cliente desconectado de parada: " + id))
+        );
 
-                                // 3. Calculamos el tiempo real entre esa ubicación falsa y la parada real
-                                return motorCalculo.calcularTiempoRestanteEntrePuntos(busUbicFalsa, lp.getParada().getUbicacion())
-                                        .map(tiempo -> new BusLlegadaDTO(
-                                                lp.getLinea().getNombreLinea(),
-                                                tiempo,
-                                                "Destino Simulado"
-                                        ));
-                            })
-                            .collectList()
-                            .map(lista -> {
-                                // 4. ORDENAR: Los que llegan antes, arriba
-                                lista.sort(Comparator.comparingInt(BusLlegadaDTO::getMinutosRestantes)); //ESTO ES CODIGO LIMPIO
-                                return lista;
-                            });
-                })
-                .share()
-                .log();
     }
 
 
