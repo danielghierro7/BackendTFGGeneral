@@ -3,10 +3,7 @@ package org.example.backendtfggeneral.controladores;
 import org.example.backendtfggeneral.entidades.Parada;
 import org.example.backendtfggeneral.services.ParadaService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -22,4 +19,11 @@ public class ParadasController {
     public List<Parada> getTodas() {
         return paradaService.obtenerTodasLasParadas();
     }
+
+    @GetMapping("/{id}")
+    public List<Parada> obtenerParadaPorIdCiudad(@PathVariable("id") Long id) {
+        return paradaService.getParadasByIdCiudad(id);
+    }
+
+
 }

@@ -57,7 +57,8 @@ public class RouteController {
                         return respuesta;
                     });
                 })
-                .share() // Compartir el flujo entre todos los usuarios
+                .replay(1)
+                .refCount() // Compartir el flujo entre todos los usuarios
                 .log(); //mas que nada para meterle un log
     }
 
@@ -93,6 +94,12 @@ public class RouteController {
                         .replay(1) // Guarda el último resultado en memoria
                         .refCount() // Mantiene el flujo vivo mientras haya alguien mirando
                         .doOnCancel(() -> System.out.println("❌ Cliente desconectado de parada: " + id))
+
+                        .doFinally(signalType -> {
+                            // Cuando ya no hay suscriptores (clientes), borramos la entrada del Map
+                            System.out.println("Limpiando caché para parada: " + id);
+                            flujosPorParada.remove(id);
+                        })
         );
 
     }
