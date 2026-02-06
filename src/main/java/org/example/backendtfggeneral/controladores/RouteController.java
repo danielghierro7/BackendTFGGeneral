@@ -59,7 +59,11 @@ public class RouteController {
                 })
                 .share() // Compartir el flujo entre todos los usuarios
                 .log(); //mas que nada para meterle un log
-    }@GetMapping(value = "/parada-tiempos", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    }
+
+
+
+    @GetMapping(value = "/parada-tiempos", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<List<BusLlegadaDTO>> obtenerBusesPorParada(@RequestParam Long idParada) {
 
         // 2. Si ya existe un flujo para esta parada, devuélvelo. Si no, créalo.

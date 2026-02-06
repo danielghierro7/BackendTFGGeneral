@@ -36,5 +36,5 @@ public class BusLlegadaDTO {
         this.minutosRestantes = minutosRestantes;
         this.destinoFinal = destinoFinal;
     }
-    // Getters y Setters...
+
 }
