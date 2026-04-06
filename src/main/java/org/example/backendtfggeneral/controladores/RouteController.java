@@ -22,6 +22,8 @@ public class RouteController {
 
     private final CalcularTiempoRestanteAParada motorCalculo;
     private final LineaParadaService lineaParadaService;
+    private final java.util.concurrent.atomic.AtomicReference<Ubicacion> ubicacionRealBus =
+            new java.util.concurrent.atomic.AtomicReference<>(new Ubicacion(37.38, -5.98));
     private final java.util.Map<Long, Flux<List<BusLlegadaDTO>>> flujosPorParada = new java.util.concurrent.ConcurrentHashMap<>();
     public RouteController(CalcularTiempoRestanteAParada motorCalculo, LineaParadaService lineaParadaService) {
         this.motorCalculo = motorCalculo;
@@ -29,22 +31,24 @@ public class RouteController {
     }
 
 
-    //Este es el de sacar cuanto le queda al bus para llegar
+    // 2. El "enchufe" para que el conductor mande su ubicación
+    @PostMapping("/actualizar-posicion-bus")
+    public reactor.core.publisher.Mono<Void> actualizarPosicion(@RequestBody Ubicacion nueva) {
+        ubicacionRealBus.set(nueva); // Guarda la última recibida
+        return reactor.core.publisher.Mono.empty();
+    }
+    //Este es el de sacar cuanto le queda al bus para a cada parada
     @GetMapping(value = "/tiempos-flujo", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<List<ParadaTiempoDTO>> obtenerTiemposRealTime(@RequestParam Long idLineaBus,
-                                                              @RequestParam double lat1,
-                                                              @RequestParam double lon1) {
+    public Flux<List<ParadaTiempoDTO>> obtenerTiemposRealTime(@RequestParam Long idLineaBus) {
 
         return Flux.interval(Duration.ZERO, Duration.ofMinutes(3))
                 .flatMap(tick -> {
                     // 1. Obtenemos las entidades LineaParada (traen la Parada dentro)
                     List<LineaParada> listaRelacion = lineaParadaService.obtenerRutaPorIdLinea(idLineaBus);
-
+                    Ubicacion posicionActualDelBus = ubicacionRealBus.get();
                     // 2. Calculamos los tiempos (Mono<List<Integer>>)
                     return motorCalculo.calcularTiempoRestanteAVariasParadas(
-                            new org.example.backendtfggeneral.beans.Ubicacion(lat1, lon1),
-                            listaRelacion
-                    ).map(tiempos -> {
+                            posicionActualDelBus, listaRelacion).map(tiempos -> {
                         // 3. Cruzamos los datos
                         List<ParadaTiempoDTO> respuesta = new ArrayList<>();
                         for (int i = 0; i < listaRelacion.size(); i++) {
@@ -63,7 +67,7 @@ public class RouteController {
     }
 
 
-
+    //Este es para ver cuanto le queda a cada bus en una parada; miramos la parada y vemos cuanto le queda para llegar al siguiente bus
     @GetMapping(value = "/parada-tiempos", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<List<BusLlegadaDTO>> obtenerBusesPorParada(@RequestParam Long idParada) {
 
@@ -76,8 +80,8 @@ public class RouteController {
 
                             return Flux.fromIterable(lineasQuePasan)
                                     .flatMap(lp -> {
-                                        Ubicacion busUbicFalsa = new Ubicacion(37.38, -5.98);
-                                        return motorCalculo.calcularTiempoRestanteEntrePuntos(busUbicFalsa, lp.getParada().getUbicacion())
+                                        Ubicacion busUbicReal = ubicacionRealBus.get();
+                                        return motorCalculo.calcularTiempoRestanteEntrePuntos(busUbicReal, lp.getParada().getUbicacion())
                                                 .onErrorResume(e -> reactor.core.publisher.Mono.just(-1))
                                                 .map(tiempo -> new BusLlegadaDTO(
                                                         lp.getLinea().getNombreLinea(),
