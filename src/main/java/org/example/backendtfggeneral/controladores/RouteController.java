@@ -9,11 +9,13 @@ import org.example.backendtfggeneral.entidades.LineaParada;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 @CrossOrigin("*")
 @RestController
@@ -22,9 +24,10 @@ public class RouteController {
 
     private final CalcularTiempoRestanteAParada motorCalculo;
     private final LineaParadaService lineaParadaService;
-    private final java.util.concurrent.atomic.AtomicReference<Ubicacion> ubicacionRealBus =
-            new java.util.concurrent.atomic.AtomicReference<>(new Ubicacion(37.38, -5.98));
+    private final AtomicReference<Ubicacion> ubicacionRealBus = new AtomicReference<>(new Ubicacion(37.38, -5.98));
     private final java.util.Map<Long, Flux<List<BusLlegadaDTO>>> flujosPorParada = new java.util.concurrent.ConcurrentHashMap<>();
+
+
     public RouteController(CalcularTiempoRestanteAParada motorCalculo, LineaParadaService lineaParadaService) {
         this.motorCalculo = motorCalculo;
         this.lineaParadaService = lineaParadaService;
@@ -33,9 +36,9 @@ public class RouteController {
 
     // 2. El "enchufe" para que el conductor mande su ubicación
     @PostMapping("/actualizar-posicion-bus")
-    public reactor.core.publisher.Mono<Void> actualizarPosicion(@RequestBody Ubicacion nueva) {
+    public Mono<Void> actualizarPosicion(@RequestBody Ubicacion nueva) {
         ubicacionRealBus.set(nueva); // Guarda la última recibida
-        return reactor.core.publisher.Mono.empty();
+        return Mono.empty();
     }
     //Este es el de sacar cuanto le queda al bus para a cada parada
     @GetMapping(value = "/tiempos-flujo", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -82,7 +85,7 @@ public class RouteController {
                                     .flatMap(lp -> {
                                         Ubicacion busUbicReal = ubicacionRealBus.get();
                                         return motorCalculo.calcularTiempoRestanteEntrePuntos(busUbicReal, lp.getParada().getUbicacion())
-                                                .onErrorResume(e -> reactor.core.publisher.Mono.just(-1))
+                                                .onErrorResume(e -> Mono.just(-1))
                                                 .map(tiempo -> new BusLlegadaDTO(
                                                         lp.getLinea().getNombreLinea(),
                                                         tiempo,
