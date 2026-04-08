@@ -3,119 +3,43 @@ package org.example.backendtfggeneral.controladores;
 import org.example.backendtfggeneral.beans.BusLlegadaDTO;
 import org.example.backendtfggeneral.beans.ParadaTiempoDTO;
 import org.example.backendtfggeneral.beans.Ubicacion;
-import org.example.backendtfggeneral.procesos.CalcularTiempoRestanteAParada;
 import org.example.backendtfggeneral.services.LineaParadaService;
-import org.example.backendtfggeneral.entidades.LineaParada;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 @CrossOrigin("*")
 @RestController
 @RequestMapping("/api/ruta")
 public class RouteController {
 
-    private final CalcularTiempoRestanteAParada motorCalculo;
     private final LineaParadaService lineaParadaService;
-    private final AtomicReference<Ubicacion> ubicacionRealBus = new AtomicReference<>(new Ubicacion(37.38, -5.98));
-    private final java.util.Map<Long, Flux<List<BusLlegadaDTO>>> flujosPorParada = new java.util.concurrent.ConcurrentHashMap<>();
 
-
-    public RouteController(CalcularTiempoRestanteAParada motorCalculo, LineaParadaService lineaParadaService) {
-        this.motorCalculo = motorCalculo;
+    public RouteController(LineaParadaService lineaParadaService) {
         this.lineaParadaService = lineaParadaService;
     }
 
-
-    // 2. El "enchufe" para que el conductor mande su ubicación
+    // 1. El conductor sigue mandando aquí, pero el controlador delega al service
     @PostMapping("/actualizar-posicion-bus")
     public Mono<Void> actualizarPosicion(@RequestBody Ubicacion nueva) {
-        ubicacionRealBus.set(nueva); // Guarda la última recibida
+        lineaParadaService.actualizarPosicion(nueva);
         return Mono.empty();
     }
-    //Este es el de sacar cuanto le queda al bus para a cada parada
+
+    // 2. Mantenemos el flujo para el mapa del pasajero
     @GetMapping(value = "/tiempos-flujo", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<List<ParadaTiempoDTO>> obtenerTiemposRealTime(@RequestParam Long idLineaBus) {
-
-        return Flux.interval(Duration.ZERO, Duration.ofMinutes(3))
-                .flatMap(tick -> {
-                    // 1. Obtenemos las entidades LineaParada (traen la Parada dentro)
-                    List<LineaParada> listaRelacion = lineaParadaService.obtenerRutaPorIdLinea(idLineaBus);
-                    Ubicacion posicionActualDelBus = ubicacionRealBus.get();
-                    // 2. Calculamos los tiempos (Mono<List<Integer>>)
-                    return motorCalculo.calcularTiempoRestanteAVariasParadas(
-                            posicionActualDelBus, listaRelacion).map(tiempos -> {
-                        // 3. Cruzamos los datos
-                        List<ParadaTiempoDTO> respuesta = new ArrayList<>();
-                        for (int i = 0; i < listaRelacion.size(); i++) {
-                            LineaParada lp = listaRelacion.get(i);
-                            String nombre = lp.getParada().getNombre();
-                            Integer tiempo = (i < tiempos.size()) ? tiempos.get(i) : -1;
-
-                            respuesta.add(new ParadaTiempoDTO(nombre, tiempo, lp.getOrden()));
-                        }
-                        return respuesta;
-                    });
-                })
-                .replay(1)
-                .refCount() // Compartir el flujo entre todos los usuarios
-                .log(); //mas que nada para meterle un log
+        // Llamamos al método lógico que ahora vive en el Service
+        return lineaParadaService.generarFlujoTiemposRealTime(idLineaBus);
     }
 
-
-    //Este es para ver cuanto le queda a cada bus en una parada; miramos la parada y vemos cuanto le queda para llegar al siguiente bus
+    // 3. Mantenemos el flujo por parada específica
     @GetMapping(value = "/parada-tiempos", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<List<BusLlegadaDTO>> obtenerBusesPorParada(@RequestParam Long idParada) {
-
-        // 2. Si ya existe un flujo para esta parada, devuélvelo. Si no, créalo.
-        return flujosPorParada.computeIfAbsent(idParada, id ->
-                Flux.interval(Duration.ZERO, Duration.ofMinutes(3))
-                        .flatMap(tick -> {
-                            System.out.println("🛰️ LLAMADA REAL A ORS PARA PARADA: " + id);
-                            List<LineaParada> lineasQuePasan = lineaParadaService.obtenerLineasPorParada(id);
-
-                            return Flux.fromIterable(lineasQuePasan)
-                                    .flatMap(lp -> {
-                                        Ubicacion busUbicReal = ubicacionRealBus.get();
-                                        return motorCalculo.calcularTiempoRestanteEntrePuntos(busUbicReal, lp.getParada().getUbicacion())
-                                                .onErrorResume(e -> Mono.just(-1))
-                                                .map(tiempo -> new BusLlegadaDTO(
-                                                        lp.getLinea().getNombreLinea(),
-                                                        tiempo,
-                                                        "Destino Simulado"
-                                                ));
-                                    })
-                                    .collectList()
-                                    .map(lista -> {
-                                        lista.sort(Comparator.comparingInt(BusLlegadaDTO::getMinutosRestantes));
-                                        return lista;
-                                    });
-                        })
-                        .replay(1) // Guarda el último resultado en memoria
-                        .refCount() // Mantiene el flujo vivo mientras haya alguien mirando
-                        .doOnCancel(() -> System.out.println("❌ Cliente desconectado de parada: " + id))
-
-                        .doFinally(signalType -> {
-                            // Cuando ya no hay suscriptores (clientes), borramos la entrada del Map
-                            System.out.println("Limpiando caché para parada: " + id);
-                            flujosPorParada.remove(id);
-                        })
-        );
-
+        // Delegamos la gestión de la caché y el flujo al Service
+        return lineaParadaService.obtenerBusesPorParadaFlujo(idParada);
     }
-
-
-
-
-
-
-
-
 }
