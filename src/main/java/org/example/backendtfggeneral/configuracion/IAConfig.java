@@ -14,7 +14,7 @@ public class IAConfig {
         ChatLanguageModel model = OllamaChatModel.builder()
                 // "host.docker.internal" apunta a tu Windows desde dentro de Docker
                 .baseUrl("http://host.docker.internal:11434")
-                .modelName("mistral")
+                .modelName("qwen2.5:7b")
                 .build();
 
         return AiServices.builder(AsistenteBus.class)
