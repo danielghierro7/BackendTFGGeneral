@@ -12,14 +12,15 @@ public class IAConfig {
     @Bean
     public AsistenteBus asistenteBus(LineaParadaService service) {
         ChatLanguageModel model = OllamaChatModel.builder()
-                .baseUrl("http://localhost:11434")
-                .modelName("llama3.2:3b") // Asegúrate de haber hecho 'ollama run llama3' antes
+                // "host.docker.internal" apunta a tu Windows desde dentro de Docker
+                .baseUrl("http://host.docker.internal:11434")
+                .modelName("mistral")
                 .build();
 
         return AiServices.builder(AsistenteBus.class)
                 .chatLanguageModel(model)
                 .chatMemory(MessageWindowChatMemory.withMaxMessages(10))
-                .tools(service) // Aquí inyectas tu Service que tendrá los métodos @Tool
+                .tools(service)
                 .build();
     }
 }
