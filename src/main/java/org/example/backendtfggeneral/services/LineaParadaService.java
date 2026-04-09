@@ -97,8 +97,22 @@ public class LineaParadaService {
 
     @Tool("Calcula cuánto tardará el bus en llegar a una parada según su nombre")
     public String cuantoFaltaParaParada(String nombreParada) {
-        // En un futuro aquí podrías buscar la parada por nombre en el repo y llamar al motorCalculo.
-        // Por ahora le damos una respuesta coherente para probar.
-        return "Consultando el tráfico y la posición actual... El bus llegará a " + nombreParada + " en aproximadamente 5-10 minutos.";
+        // 1. Buscamos la relación de esa parada en la base de datos por su nombre
+        // (Asegúrate de tener un método en tu repo que busque por nombre)
+        List<LineaParada> relaciones = lineaParadaRepository.findLineaParadaByNombre(nombreParada);
+
+        if (relaciones.isEmpty()) {
+            return "No he encontrado ninguna parada llamada " + nombreParada + " en mi base de datos.";
+        }
+
+        // 2. Cogemos la primera (o la que necesites) y calculamos el tiempo real
+        LineaParada lp = relaciones.get(0);
+        Ubicacion destino = lp.getParada().getUbicacion();
+        Ubicacion origen = ubicacionRealBus.get();
+
+        // 3. Llamamos a tu motor de cálculo (usamos block() porque la Tool debe ser síncrona)
+        Integer tiempoReal = motorCalculo.calcularTiempoRestanteEntrePuntos(origen, destino).block();
+
+        return "Confirmado con el sistema: el bus hacia " + nombreParada + " llegará en " + tiempoReal + " minutos.";
     }
 }
