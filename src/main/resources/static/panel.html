@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Control - Conductor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="panel-bg"> <div class="card panel-card">
+    <h2 id="nombreBus" class="bus-id">BUS: ---</h2>
+
+    <div class="status-bar">
+        <span class="dot"></span> Transmisión Activa
+    </div>
+
+    <div class="data-field">
+        <span class="data-label">Latitud</span>
+        <span id="lat" class="data-value">Buscando...</span>
+    </div>
+
+    <div class="data-field">
+        <span class="data-label">Longitud</span>
+        <span id="lon" class="data-value">Buscando...</span>
+    </div>
+
+    <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+</div>
+
+<script>
+    const busId = localStorage.getItem('bus_id');
+
+    // Seguridad: Si no hay ID, al login de cabeza
+    if (!busId) {
+        window.location.href = 'login.html';
+    } else {
+        document.getElementById('nombreBus').innerText = "BUS: " + busId;
+    }
+
+    function logout() {
+        localStorage.removeItem('bus_id');
+        window.location.href = 'login.html';
+    }
+
+    function enviarGPS() {
+        navigator.geolocation.getCurrentPosition(pos => {
+            const coords = {
+                latitud: pos.coords.latitude,
+                longitud: pos.coords.longitude
+            };
+
+            // Actualizamos la interfaz
+            document.getElementById('lat').innerText = coords.latitud.toFixed(6);
+            document.getElementById('lon').innerText = coords.longitud.toFixed(6);
+
+            // Envío al backend
+            fetch(`/api/conductor/ubicacion/${busId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(coords)
+            })
+                .then(res => {
+                    if(!res.ok) console.error("Fallo al enviar ubicación");
+                })
+                .catch(err => console.error("Error de red:", err));
+
+        }, err => {
+            console.error("Error GPS:", err);
+            document.getElementById('lat').innerText = "GPS Desactivado";
+        }, {
+            enableHighAccuracy: true,
+            timeout: 5000
+        });
+    }
+
+    setInterval(enviarGPS, 5000);
+    enviarGPS();
+</script>
+</body>
+</html>

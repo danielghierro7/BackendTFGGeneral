@@ -50,6 +50,20 @@ CREATE TABLE ai_chat_log (
                              timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+
+
+-- TABLA DE AUTENTICACIÓN PARA CONDUCTORES
+CREATE TABLE conductor_auth (
+                                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                bus_id VARCHAR(50) NOT NULL UNIQUE, -- El identificador para el login (ej: 'bus-101')
+                                password VARCHAR(255) NOT NULL,      -- La contraseña (antes 'password_hash')
+                                nombre_conductor VARCHAR(150),
+                                id_linea_asignada BIGINT,
+                                FOREIGN KEY (id_linea_asignada) REFERENCES linea_bus(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 -- =========================
 -- DATOS
 -- =========================
@@ -111,3 +125,8 @@ INSERT INTO linea_parada (id_linea, id_parada, orden, tiempo_siguiente_min, dist
                                                                                                         (142, 10, 2, 6, 2.2),
                                                                                                         (142, 11, 3, 3, 1.1),
                                                                                                         (142, 12, 4, 0, 0.0);
+
+INSERT INTO conductor_auth (bus_id, password, nombre_conductor, id_linea_asignada) VALUES
+                                                                                       ('bus-101', 'tfg2024', 'Juan Pérez', 140),
+                                                                                       ('bus-102', 'admin123', 'Ana García', 141),
+                                                                                       ('bus-103', 'osuna2026', 'Carlos Ruiz', 142);

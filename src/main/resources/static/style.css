@@ -1,0 +1,162 @@
+/* VARIABLES GLOBALES */
+:root {
+    --primary-color: #0047AB;    /* Azul profesional */
+    --secondary-color: #002D62;  /* Azul oscuro */
+    --bg-light: #f4f7f6;         /* Fondo para login */
+    --bg-dark: #1a1a1d;          /* Fondo para panel */
+    --card-dark: #2a2a2e;        /* Tarjeta panel */
+    --text-light: #333;
+    --text-dark: #eaeaea;
+    --accent-color: #FFD700;     /* Amarillo bus */
+    --success-color: #2ecc71;    /* Verde activo */
+    --error-color: #e74c3c;      /* Rojo error */
+}
+
+/* ESTILOS COMUNES */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    transition: background 0.5s;
+}
+
+.card {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+/* ESTILO ESPECÍFICO PARA LOGIN (Fondo claro) */
+body.login-bg {
+    background-color: var(--bg-light);
+}
+
+.login-card {
+    border-top: 5px solid var(--primary-color);
+}
+
+.login-card h2 {
+    color: var(--secondary-color);
+    margin-bottom: 30px;
+}
+
+input {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 10px 0;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+button.primary-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 20px;
+}
+
+button.primary-btn:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
+}
+
+/* ESTILO ESPECÍFICO PARA PANEL (Fondo oscuro) */
+body.panel-bg {
+    background-color: var(--bg-dark);
+}
+
+.panel-card {
+    background-color: var(--card-dark);
+    color: var(--text-dark);
+    border: 1px solid #444;
+}
+
+.bus-id {
+    color: var(--accent-color);
+    font-weight: bold;
+    font-size: 1.8rem;
+    display: block;
+}
+
+.data-field {
+    background-color: rgba(0,0,0,0.2);
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    border: 1px solid #3a3a3d;
+}
+
+.data-label {
+    font-size: 0.8rem;
+    color: #aaa;
+    text-transform: uppercase;
+    display: block;
+}
+
+.data-value {
+    font-family: 'Courier New', monospace;
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+/* INDICADOR DE ESTADO */
+.status-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 15px;
+    border-radius: 20px;
+    background-color: rgba(46, 204, 113, 0.1);
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    background-color: var(--success-color);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+button.logout-btn {
+    background: transparent;
+    border: 1px solid #666;
+    color: #aaa;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+button.logout-btn:hover {
+    border-color: var(--error-color);
+    color: var(--error-color);
+}
