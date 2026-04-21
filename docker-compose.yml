@@ -1,30 +1,38 @@
 services:
-  oracle-apex:
-    image: gvenzl/oracle-xe:21-full
-    container_name: oracle_bus
-    restart: always
-    ports:
-      - "1521:1521"  # Puerto DB para Spring
-      - "8181:8080"  # Puerto Web para APEX
-    environment:
-      - ORACLE_PASSWORD=root_pass_123
-      - APP_USER=bus_user
-      - APP_USER_PASSWORD=bus_pass_123
-    volumes:
-      - oracle_data:/opt/oracle/oradata
+  # --- BASE DE DATOS MYSQL (comentada, ahora usamos Oracle local) ---
+  # mysql:
+  #   healthcheck:
+  #     test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot" ]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+  #   image: mysql:8.0
+  #   container_name: mysql_bus
+  #   restart: always
+  #   command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: root
+  #     MYSQL_DATABASE: bus_db
+  #     MYSQL_USER: bus_user
+  #     MYSQL_PASSWORD: bus_pass
+  #   ports:
+  #     - "3307:3306"
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #     - ./initdb/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   backend:
     build: .
     container_name: spring_backend
     ports:
-      - "8080:8080"
-    depends_on:
-      - oracle-apex
+      - "8090:8080"
+    # depends_on:
+    #   mysql:
+    #     condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@oracle-apex:1521/XE
-      - SPRING_DATASOURCE_USERNAME=system
-      - SPRING_DATASOURCE_PASSWORD=root_pass_123
-      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=oracle.jdbc.OracleDriver
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@host.docker.internal:1521/FREEPDB1
+      - SPRING_DATASOURCE_USERNAME=TFG_BUS  #El usuario y el nombre del schema es el mismo en oracle
+      - SPRING_DATASOURCE_PASSWORD=Marchena_2026!
 
-volumes:
-  oracle_data:
+# volumes:
+#   mysql_data:
