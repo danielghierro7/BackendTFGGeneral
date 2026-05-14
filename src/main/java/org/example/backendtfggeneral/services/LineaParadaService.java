@@ -81,8 +81,8 @@ public class LineaParadaService {
                                                 .map(tiempo -> new BusLlegadaDTO(
                                                         lp.getLinea().getNombreLinea(),
                                                         tiempo,
-                                                        "Destino Final" // Aquí podrías poner lp.getLinea().getCiudadDestino()
-                                                ));
+                                                        lp.getLinea().getCiudadDestino() != null ?
+                                                                lp.getLinea().getCiudadDestino().getNombre() : "Destino Final"  ));
                                     })
                                     .collectList();
                         })
