@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -42,52 +43,78 @@ public class LineaParadaService {
      * TAREA PROGRAMADA: Actualiza la información cada 2 minutos.
      * Este es el ÚNICO sitio donde se hace el trabajo pesado de BD y API.
      */
-    @Scheduled(fixedRate = 120000) // 120.000 ms = 2 minutos
+
+    @Scheduled(fixedRate = 120000) // Cada 2 minutos refresca la "vitrina"
     public void refrescarDatosGlobales() {
-        System.out.println("🔄 [BACKEND] Iniciando actualización de tiempos en caché...");
+        System.out.println("🔄 [BACKEND] Refrescando tiempos para todas las líneas activas...");
 
-        // 1. Actualizar caché de LÍNEAS (Ejemplo para línea 140)
-        Long idLineaEjemplo = 140L;
-        List<LineaParada> listaRelacion = lineaParadaRepository.findById_IdLineaOrderByOrdenAsc(idLineaEjemplo);
-        Ubicacion posBus = conductorService.obtenerPosicionActual("bus-101");
+        // 1. Obtenemos solo los IDs de las líneas con buses en movimiento
+        Set<Long> lineasActivas = conductorService.obtenerLineasActivas();
 
-        motorCalculo.calcularTiempoRestanteAVariasParadas(posBus, listaRelacion)
-                .subscribe(tiempos -> {
-                    List<ParadaTiempoDTO> respuesta = new ArrayList<>();
-                    for (int i = 0; i < listaRelacion.size(); i++) {
-                        LineaParada lp = listaRelacion.get(i);
-                        Integer tiempo = (i < tiempos.size()) ? tiempos.get(i) : -1;
-                        respuesta.add(new ParadaTiempoDTO(lp.getParada().getNombre(), tiempo, lp.getOrden()));
-                    }
-                    cacheTiemposLinea.put(idLineaEjemplo, respuesta);
+        if (lineasActivas.isEmpty()) {
+            System.out.println("💤 No hay buses activos. Standby...");
+            return;
+        }
 
-                    // 2. Aprovechamos para actualizar la caché de PARADAS individualmente
-                    actualizarCachePorParadas(listaRelacion, tiempos);
-                });
+        for (Long idLinea : lineasActivas) {
+            Map<String, Ubicacion> busesDeLaLinea = conductorService.obtenerBusesActivosPorLinea(idLinea);
+
+            if (!busesDeLaLinea.isEmpty()) {
+                // Tomamos la posición del primer bus encontrado para esta línea
+                Ubicacion posBus = busesDeLaLinea.values().iterator().next();
+
+                motorCalculo.calcularTiempoRestanteAVariasParadas(idLinea, posBus)
+                        .subscribe(tiempos -> {
+                            List<LineaParada> listaRelacion = lineaParadaRepository.findById_IdLineaOrderByOrdenAsc(idLinea);
+
+                            // Actualizamos las dos cachés: la de la línea completa y la de paradas individuales
+                            actualizarCacheEnMemoria(idLinea, listaRelacion, tiempos);
+
+                            System.out.println("✅ Caché actualizada para línea: " + idLinea + " (" + tiempos.size() + " paradas pendientes)");
+                        });
+            }
+        }
     }
 
-    private void actualizarCachePorParadas(List<LineaParada> relaciones, List<Integer> tiempos) {
-        // 1. Opcional: Si quieres limpiar TODA la caché de paradas antes de rellenar
-        // cacheTiemposParada.clear();
+    /**
+     * Método de apoyo para organizar los datos en la "vitrina" (caché)
+     */
+    private void actualizarCacheEnMemoria(Long idLinea, List<LineaParada> relaciones, List<Integer> tiempos) {
+        List<ParadaTiempoDTO> listaLinea = new ArrayList<>();
+
+        // El offset nos dice cuántas paradas ya han quedado atrás
+        int offset = relaciones.size() - tiempos.size();
 
         for (int i = 0; i < relaciones.size(); i++) {
             LineaParada lp = relaciones.get(i);
-            Long idParada = lp.getParada().getId();
-            Integer tiempoLlegada = (i < tiempos.size()) ? tiempos.get(i) : -1;
+            Integer minutos = (i >= offset) ? tiempos.get(i - offset) : 0; // 0 si ya pasó
 
-            BusLlegadaDTO dto = new BusLlegadaDTO(
-                    lp.getLinea().getNombreLinea(),
-                    tiempoLlegada,
-                    lp.getLinea().getCiudadDestino() != null ? lp.getLinea().getCiudadDestino().getNombre() : "Destino Final"
-            );
+            ParadaTiempoDTO dto = new ParadaTiempoDTO(lp.getParada().getNombre(), minutos, lp.getOrden());
+            listaLinea.add(dto);
 
-            // SOLUCIÓN: En lugar de usar computeIfAbsent que siempre añade,
-            // creamos una lista nueva o limpiamos la existente para esta parada específica.
-            List<BusLlegadaDTO> listaNueva = new ArrayList<>();
-            listaNueva.add(dto);
-            cacheTiemposParada.put(idParada, listaNueva);
+            // Actualizamos también la caché por parada individual para la vista de "postes"
+            actualizarCacheIndividualParada(lp.getParada().getId(), lp.getLinea().getNombreLinea(), minutos);
         }
+
+        cacheTiemposLinea.put(idLinea, listaLinea);
     }
+
+
+    private void actualizarCacheIndividualParada(Long idParada, String nombreLinea, Integer minutos) {
+        // BusLlegadaDTO es lo que espera el frontend para la vista de "Poste de Parada"
+        BusLlegadaDTO llegada = new BusLlegadaDTO(
+                nombreLinea,
+                minutos,
+                "En trayecto" // Puedes cambiar esto por el destino final si lo tienes en la entidad Linea
+        );
+
+        List<BusLlegadaDTO> listaNueva = new ArrayList<>();
+        listaNueva.add(llegada);
+
+        // Guardamos en el mapa cacheTiemposParada
+        cacheTiemposParada.put(idParada, listaNueva);
+    }
+
 
     // --- MÉTODOS DE FLUJO (Solo leen la caché) ---
 

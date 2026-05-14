@@ -1,0 +1,9 @@
+En esta carpeta esta la aplicación entera :
+
+Pasos : usar Docker para la instalación usando cd a la carpeta del backend y haciendo Docker compose up -d --build después de empaquetarlo con Maven y hacerle un build ; (es el puerto 8090 )
+
+Paso 2 lanzar el frontend con npm run dev (ya que es de nextjs) y usarlo
+
+Queda implementarlo en un vps ; espero dani del futuro que todo salga bien y cuando releas esto hayas sacado mínimo 200 euros vendiéndoselo al menos a un pueblo ; confio en ti
+
+Esta todo en una bd Oracle y con ápex como backoffice
