@@ -41,7 +41,7 @@ public class LineaParadaService {
 
     public Flux<List<ParadaTiempoDTO>> generarFlujoTiemposRealTime(Long idLineaBus) {
         // Reducimos el tiempo a 10 segundos para que el mapa sea fluido
-        return Flux.interval(Duration.ZERO, Duration.ofSeconds(10))
+        return Flux.interval(Duration.ZERO, Duration.ofMinutes(2))
                 .flatMap(tick -> {
                     List<LineaParada> listaRelacion = lineaParadaRepository.findById_IdLineaOrderByOrdenAsc(idLineaBus);
 
@@ -65,7 +65,7 @@ public class LineaParadaService {
 
     public Flux<List<BusLlegadaDTO>> obtenerBusesPorParadaFlujo(Long idParada) {
         return flujosPorParada.computeIfAbsent(idParada, id ->
-                Flux.interval(Duration.ZERO, Duration.ofSeconds(10))
+                Flux.interval(Duration.ZERO, Duration.ofMinutes(2))
                         .flatMap(tick -> {
                             // Buscamos todas las líneas que pasan por esta parada
                             List<LineaParada> lineasQuePasan = lineaParadaRepository.findById_IdParada(id);
