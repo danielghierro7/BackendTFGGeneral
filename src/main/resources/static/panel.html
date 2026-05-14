@@ -5,11 +5,13 @@
     <title>Panel de Control - Conductor</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="panel-bg"> <div class="card panel-card">
+<body class="panel-bg">
+<div class="card panel-card">
     <h2 id="nombreBus" class="bus-id">BUS: ---</h2>
+    <h3 id="infoLinea" style="color: #4a90e2; margin-bottom: 20px;">Línea: ---</h3>
 
     <div class="status-bar">
-        <span class="dot"></span> Transmisión Activa
+        <span class="dot" id="statusDot"></span> <span id="statusText">Transmisión Activa</span>
     </div>
 
     <div class="data-field">
@@ -22,56 +24,72 @@
         <span id="lon" class="data-value">Buscando...</span>
     </div>
 
-    <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+    <button class="logout-btn" onclick="logout()">Finalizar Jornada / Salir</button>
 </div>
 
 <script>
     const busId = localStorage.getItem('bus_id');
+    const idLinea = localStorage.getItem('id_linea');
 
-    // Seguridad: Si no hay ID, al login de cabeza
-    if (!busId) {
+    // Verificación de sesión: si falta algo, volvemos al login
+    if (!busId || !idLinea) {
         window.location.href = 'login.html';
     } else {
         document.getElementById('nombreBus').innerText = "BUS: " + busId;
+        document.getElementById('infoLinea').innerText = "Ruta activa: Línea " + idLinea;
     }
 
     function logout() {
         localStorage.removeItem('bus_id');
+        localStorage.removeItem('id_linea');
         window.location.href = 'login.html';
     }
 
     function enviarGPS() {
+        if (!navigator.geolocation) {
+            document.getElementById('statusText').innerText = "GPS no soportado";
+            return;
+        }
+
         navigator.geolocation.getCurrentPosition(pos => {
+            // Ajustamos los nombres a tu clase Ubicacion.java del Backend
             const coords = {
                 latitud: pos.coords.latitude,
                 longitud: pos.coords.longitude
             };
 
-            // Actualizamos la interfaz
+            // Actualizamos la interfaz visual
             document.getElementById('lat').innerText = coords.latitud.toFixed(6);
             document.getElementById('lon').innerText = coords.longitud.toFixed(6);
+            document.getElementById('statusDot').style.background = "#2ecc71"; // Verde (OK)
 
-            // Envío al backend
+            // Envío al endpoint dinámico
             fetch(`/api/conductor/ubicacion/${busId}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(coords)
             })
                 .then(res => {
-                    if(!res.ok) console.error("Fallo al enviar ubicación");
+                    if(!res.ok) console.error("Error en el servidor al recibir GPS");
                 })
-                .catch(err => console.error("Error de red:", err));
+                .catch(err => {
+                    console.error("Error de conexión:", err);
+                    document.getElementById('statusDot').style.background = "#e74c3c"; // Rojo (Error)
+                });
 
         }, err => {
-            console.error("Error GPS:", err);
-            document.getElementById('lat').innerText = "GPS Desactivado";
+            console.error("Error de acceso al GPS:", err);
+            document.getElementById('lat').innerText = "Error GPS";
+            document.getElementById('statusDot').style.background = "#f1c40f"; // Amarillo (Sin señal)
         }, {
             enableHighAccuracy: true,
-            timeout: 5000
+            timeout: 10000
         });
     }
 
-    setInterval(enviarGPS, 5000);
+    // Enviamos la ubicación cada 10 segundos para no saturar, pero mantener precisión
+    setInterval(enviarGPS, 10000);
+    // Primera ejecución inmediata
     enviarGPS();
 </script>
 </body>

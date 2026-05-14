@@ -2,35 +2,49 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Acceso Conductor</title>
+    <title>Acceso Conductor - Bus Control</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="login-bg">
 <div class="card login-card">
     <h2>🚌 Bus Control</h2>
-    <input type="text" id="busId" placeholder="ID del Autobús">
+    <p style="color: #666; margin-bottom: 20px;">Inicie sesión para activar el seguimiento</p>
+
+    <input type="text" id="busId" placeholder="ID del Autobús (ej: bus-101)">
     <input type="password" id="pass" placeholder="Contraseña">
-    <button class="primary-btn" onclick="validar()">Entrar</button>
+    <input type="number" id="idLinea" placeholder="ID de la Línea (ej: 140)">
+
+    <button class="primary-btn" onclick="validar()">Entrar y Activar Ruta</button>
 </div>
 
 <script>
     async function validar() {
         const bus = document.getElementById('busId').value;
         const p = document.getElementById('pass').value;
+        const linea = document.getElementById('idLinea').value;
 
-        if(!bus || !p) return alert("Rellena los campos");
+        if(!bus || !p || !linea) {
+            return alert("Por favor, rellena todos los campos (Bus, Contraseña y Línea)");
+        }
 
         const resp = await fetch('/api/conductor/login', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ busId: bus, password: p })
+            // Enviamos el objeto que espera tu LoginRequest.java
+            body: JSON.stringify({
+                busId: bus,
+                password: p,
+                idLinea: parseInt(linea)
+            })
         });
 
         if (resp.ok) {
+            // Guardamos ambos datos para el panel de control
             localStorage.setItem('bus_id', bus);
+            localStorage.setItem('id_linea', linea);
             window.location.href = 'panel.html';
         } else {
-            alert("Credenciales incorrectas");
+            alert("Credenciales incorrectas o línea no válida");
         }
     }
 </script>
