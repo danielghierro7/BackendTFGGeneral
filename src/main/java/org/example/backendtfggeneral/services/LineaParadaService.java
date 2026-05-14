@@ -67,6 +67,9 @@ public class LineaParadaService {
     }
 
     private void actualizarCachePorParadas(List<LineaParada> relaciones, List<Integer> tiempos) {
+        // 1. Opcional: Si quieres limpiar TODA la caché de paradas antes de rellenar
+        // cacheTiemposParada.clear();
+
         for (int i = 0; i < relaciones.size(); i++) {
             LineaParada lp = relaciones.get(i);
             Long idParada = lp.getParada().getId();
@@ -78,8 +81,11 @@ public class LineaParadaService {
                     lp.getLinea().getCiudadDestino() != null ? lp.getLinea().getCiudadDestino().getNombre() : "Destino Final"
             );
 
-            // Guardamos/Actualizamos la lista de buses que llegan a esa parada
-            cacheTiemposParada.computeIfAbsent(idParada, k -> new ArrayList<>()).add(dto);
+            // SOLUCIÓN: En lugar de usar computeIfAbsent que siempre añade,
+            // creamos una lista nueva o limpiamos la existente para esta parada específica.
+            List<BusLlegadaDTO> listaNueva = new ArrayList<>();
+            listaNueva.add(dto);
+            cacheTiemposParada.put(idParada, listaNueva);
         }
     }
 
