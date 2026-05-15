@@ -138,17 +138,25 @@ public class LineaParadaService {
         Ubicacion u = conductorService.obtenerPosicionActual(busId);
         return "El bus " + busId + " está en Lat: " + u.getLatitud() + ", Lon: " + u.getLongitud();
     }
-
-    @Tool("Calcula cuánto tardará un bus específico en llegar a una parada")
+    @Tool("Calcula cuánto tardará un bus específico en llegar a una parada buscando por su nombre")
     public String cuantoFaltaParaParada(String busId, String nombreParada) {
-        // Para la IA, podemos permitir un .block() puntual o leer la caché
-        List<LineaParada> relaciones = lineaParadaRepository.findByParada_Nombre(nombreParada);
-        if (relaciones.isEmpty()) return "No encuentro esa parada.";
+        // 1. Obtenemos la línea en la que está trabajando ese bus actualmente
+        Long idLinea = conductorService.obtenerLineaDeBus(busId);
+        if (idLinea == null) return "El bus " + busId + " no está asignado a ninguna línea activa ahora mismo.";
 
-        Ubicacion origen = conductorService.obtenerPosicionActual(busId);
-        Ubicacion destino = relaciones.get(0).getParada().getUbicacion();
+        // 2. Buscamos en la CACHÉ que ya tienes actualizada (cacheTiemposLinea)
+        // Esto es mucho más rápido y no bloquea el hilo
+        List<ParadaTiempoDTO> tiemposLinea = cacheTiemposLinea.get(idLinea);
 
-        Integer tiempoReal = motorCalculo.calcularTiempoRestanteEntrePuntos(origen, destino).block();
-        return "El bus " + busId + " llegará a " + nombreParada + " en " + tiempoReal + " minutos.";
+        if (tiemposLinea != null) {
+            return tiemposLinea.stream()
+                    // Buscamos la parada ignorando mayúsculas/minúsculas
+                    .filter(p -> p.getNombreParada().equalsIgnoreCase(nombreParada))
+                    .findFirst()
+                    .map(p -> "El bus " + busId + " llegará a " + nombreParada + " en aproximadamente " + p.getMinutosFaltantes() + " minutos.")
+                    .orElse("La parada '" + nombreParada + "' no pertenece a la línea actual del bus " + busId + ".");
+        }
+
+        return "Lo siento, todavía estoy calculando los tiempos para esa línea. Inténtalo en unos segundos.";
     }
 }

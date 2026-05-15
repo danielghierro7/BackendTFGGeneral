@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class CalcularTiempoRestanteAParada {
@@ -27,10 +28,10 @@ public class CalcularTiempoRestanteAParada {
         this.lineaParadaRepository = lineaParadaRepository;
     }
 
-    // Tu método de ORS se queda igual (está muy bien gestionado)
     public Mono<Integer> calcularTiempoRestanteEntrePuntos(Ubicacion punto1, Ubicacion punto2) {
         if (punto1 == null || punto2 == null) return Mono.just(0);
-        var body = java.util.Map.of(
+
+        var body = Map.of(
                 "coordinates", new double[][]{
                         {punto1.getLongitud(), punto1.getLatitud()},
                         {punto2.getLongitud(), punto2.getLatitud()}
@@ -56,27 +57,29 @@ public class CalcularTiempoRestanteAParada {
                     JsonNode routes = root.path("routes");
                     if (!routes.isArray() || routes.isEmpty()) return 0;
                     double segundos = routes.get(0).path("summary").path("duration").asDouble(0.0);
+                    // Redondeamos hacia arriba para no dar 0 min si faltan 30 seg
                     return (int) Math.ceil(segundos / 60.0);
                 })
-                .onErrorResume(e -> Mono.just(0));
+                .onErrorResume(e -> {
+                    System.err.println("Error en llamada a API ORS: " + e.getMessage());
+                    return Mono.just(0);
+                });
     }
 
-    /**
-     * MÉTODO ACTUALIZADO: Lógica TUSSAM con Oracle Spatial
-     */
     public Mono<List<Integer>> calcularTiempoRestanteAVariasParadas(Long idLinea, Ubicacion ubicacionBus) {
 
-        // 1. Preguntamos a Oracle cuál es el ID de la siguiente parada basándose en la ruta LRS
+        // 1. Preguntamos a Oracle cuál es el ID de la siguiente parada
         Long idSiguienteParada = lineaParadaRepository.encontrarSiguienteParadaId(
                 idLinea, ubicacionBus.getLatitud(), ubicacionBus.getLongitud());
 
-        if (idSiguienteParada == null) {
-            System.out.println("Bus fuera de ruta o línea terminada.");
+        if (idSiguienteParada != null) {
+            System.out.println("📍 ORACLE DICE: La siguiente parada es ID " + idSiguienteParada);
+        } else {
+            System.out.println("⚠️ ORACLE DICE: No se encontró parada (posible fin de trayecto).");
             return Mono.just(new ArrayList<>());
         }
 
-        // 2. Buscamos el objeto LineaParada completo para saber su 'orden'
-        // Usamos la clave compuesta (idLinea, idSiguienteParada)
+        // 2. Localizamos el registro en la tabla intermedia para saber el ORDEN
         LineaParadaId idCompuesto = new LineaParadaId(idLinea, idSiguienteParada);
         List<LineaParada> paradasEncontradas = lineaParadaRepository.findLineaParadaById(idCompuesto);
 
@@ -84,8 +87,7 @@ public class CalcularTiempoRestanteAParada {
 
         int ordenSiguiente = paradasEncontradas.get(0).getOrden();
 
-        // 3. Obtenemos todas las paradas desde la actual hasta el final ordenadas
-        // He adaptado el nombre a lo que Spring espera según tu Repository
+        // 3. Obtenemos todas las paradas desde la actual hasta el final
         List<LineaParada> tramosRestantes = lineaParadaRepository.findById_IdLineaOrderByOrdenAsc(idLinea)
                 .stream()
                 .filter(lp -> lp.getOrden() >= ordenSiguiente)
@@ -93,17 +95,24 @@ public class CalcularTiempoRestanteAParada {
 
         if (tramosRestantes.isEmpty()) return Mono.just(new ArrayList<>());
 
-        // 4. Calculamos tiempo real a la PRIMERA parada (ORS) y sumamos el resto (BD)
+        // 4. Cálculo Reactivo
         return calcularTiempoRestanteEntrePuntos(ubicacionBus, tramosRestantes.get(0).getParada().getUbicacion())
                 .map(tiempoPrimerTramo -> {
                     List<Integer> resultados = new ArrayList<>();
                     int acumulado = tiempoPrimerTramo;
+
+                    System.out.println("⏱️ [API] Tiempo a la parada " + idSiguienteParada + ": " + acumulado + " min");
                     resultados.add(acumulado);
 
                     // Bucle acumulativo: tiempo API + sumas sucesivas de BD
                     for (int i = 0; i < tramosRestantes.size() - 1; i++) {
-                        int tiempoDeBD = tramosRestantes.get(i).getTiempoSiguienteMin();
+                        // CORRECCIÓN CRÍTICA: Evitar NullPointerException al hacer unboxing
+                        Integer tiempoBDNullable = tramosRestantes.get(i).getTiempoSiguienteMin();
+                        int tiempoDeBD = (tiempoBDNullable != null) ? tiempoBDNullable : 0;
+
                         acumulado += tiempoDeBD;
+
+                        System.out.println("⏱️ [ACUMULADO] Parada Orden " + tramosRestantes.get(i+1).getOrden() + ": " + acumulado + " min");
                         resultados.add(acumulado);
                     }
                     return resultados;
