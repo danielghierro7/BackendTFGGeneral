@@ -79,6 +79,9 @@ public class LineaParadaService {
     /**
      * Método de apoyo para organizar los datos en la "vitrina" (caché)
      */
+    /**
+     * Método de apoyo para organizar los datos en la "vitrina" (caché)
+     */
     private void actualizarCacheEnMemoria(Long idLinea, List<LineaParada> relaciones, List<Integer> tiempos) {
         List<ParadaTiempoDTO> listaLinea = new ArrayList<>();
 
@@ -92,20 +95,23 @@ public class LineaParadaService {
             ParadaTiempoDTO dto = new ParadaTiempoDTO(lp.getParada().getNombre(), minutos, lp.getOrden());
             listaLinea.add(dto);
 
-            // Actualizamos también la caché por parada individual para la vista de "postes"
-            actualizarCacheIndividualParada(lp.getParada().getId(), lp.getLinea().getNombreLinea(), minutos);
+            // --- CORRECCIÓN AQUÍ: Ahora pasamos 4 argumentos (idLinea al principio) ---
+            actualizarCacheIndividualParada(idLinea, lp.getParada().getId(), lp.getLinea().getNombreLinea(), minutos);
         }
 
         cacheTiemposLinea.put(idLinea, listaLinea);
     }
 
+    private void actualizarCacheIndividualParada(Long idLinea, Long idParada, String nombreLinea, Integer minutos) {
+        // 1. Buscamos el nombre de la última parada de esta línea (Destino Final) usando el idLinea
+        String destinoFinal = lineaParadaRepository.obtenerNombreDestinoFinal(idLinea)
+                .orElse("Cargando...");
 
-    private void actualizarCacheIndividualParada(Long idParada, String nombreLinea, Integer minutos) {
-        // BusLlegadaDTO es lo que espera el frontend para la vista de "Poste de Parada"
+        // 2. Ahora creamos el DTO con el nombre real del destino
         BusLlegadaDTO llegada = new BusLlegadaDTO(
                 nombreLinea,
                 minutos,
-                "En trayecto" // Puedes cambiar esto por el destino final si lo tienes en la entidad Linea
+                destinoFinal
         );
 
         List<BusLlegadaDTO> listaNueva = new ArrayList<>();

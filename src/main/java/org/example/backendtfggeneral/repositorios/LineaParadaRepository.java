@@ -16,7 +16,12 @@ public interface LineaParadaRepository extends JpaRepository<LineaParada, LineaP
     List<LineaParada> findLineaParadaById(LineaParadaId id);
 
     List<LineaParada> findById_IdLineaOrderByOrdenAsc(Long idLinea);
-
+    @Query(value = "SELECT p.nombre FROM parada p " + // <--- Cambiado "paradas" por "parada"
+            "JOIN linea_parada lp ON p.id = lp.id_parada " +
+            "WHERE lp.id_linea = :idLinea " +
+            "AND lp.orden = (SELECT MAX(orden) FROM linea_parada WHERE id_linea = :idLinea)",
+            nativeQuery = true)
+    Optional<String> obtenerNombreDestinoFinal(@Param("idLinea") Long idLinea);
     // NUEVO: Método para obtener el nombre de la parada encontrada por Spatial
     @Query("SELECT lp.parada.nombre FROM LineaParada lp WHERE lp.id.idParada = :idParada AND lp.id.idLinea = :idLinea")
     Optional<String> encontrarNombreParada(@Param("idParada") Long idParada, @Param("idLinea") Long idLinea);
